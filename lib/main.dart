@@ -871,7 +871,7 @@ class _TimerScreenState extends State<TimerScreen> {
               ),
             ),
             // Conditionally show the button based on the switch state
-            if (isPioneerEnabled && _monthlyTotals.isNotEmpty)
+            if (isPioneerEnabled)
               ElevatedButton(
                 onPressed: () {
                   if (_monthlyTotals.isNotEmpty) {
