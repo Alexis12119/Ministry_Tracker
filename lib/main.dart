@@ -12,71 +12,6 @@ void main() {
   runApp(const MyApp());
 }
 
-class MonthlyTotal {
-  final String monthKey;
-  int totalSeconds;
-
-  MonthlyTotal({required this.monthKey, required this.totalSeconds});
-
-  factory MonthlyTotal.fromJson(String jsonString) {
-    Map<String, dynamic> jsonData = jsonDecode(jsonString);
-    return MonthlyTotal(
-        monthKey: jsonData['monthKey'], totalSeconds: jsonData['totalSeconds']);
-  }
-
-  String get formattedTotal => _formatTime(totalSeconds);
-
-  String get monthName {
-    List<String> months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ];
-    List<String> parts = monthKey.split('_');
-    int monthIndex = int.parse(parts[1]) - 1;
-    return months[monthIndex];
-  }
-
-  int get year => int.parse(monthKey.split('_')[0]);
-
-  setTotalSeconds(int seconds) {
-    totalSeconds = seconds;
-  }
-
-  String toJson() {
-    return jsonEncode({'monthKey': monthKey, 'totalSeconds': totalSeconds});
-  }
-
-  String _formatTime(int timeInSeconds) {
-    Duration duration = Duration(seconds: timeInSeconds);
-    String hours = duration.inHours.remainder(24).toString().padLeft(2, '0');
-    String minutes =
-        duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    String seconds =
-        duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$hours:$minutes:$seconds';
-  }
-}
-
-class MonthlyTotalsScreen extends StatefulWidget {
-  final List<MonthlyTotal> monthlyTotals;
-
-  const MonthlyTotalsScreen({super.key, required this.monthlyTotals});
-
-  @override
-  _MonthlyTotalsScreenState createState() =>
-      _MonthlyTotalsScreenState(monthlyTotals: monthlyTotals);
-}
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -155,98 +90,6 @@ class TimerScreen extends StatefulWidget {
 
   @override
   _TimerScreenState createState() => _TimerScreenState();
-}
-
-class _MonthlyTotalsScreenState extends State<MonthlyTotalsScreen> {
-  List<MonthlyTotal> monthlyTotals;
-  List<MonthlyTotal> filteredMonthlyTotals;
-  TextEditingController searchController = TextEditingController();
-
-  _MonthlyTotalsScreenState({required this.monthlyTotals})
-      : filteredMonthlyTotals = List.from(monthlyTotals);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Monthly Hours', style: TextStyle(fontSize: 20)),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: searchController,
-              onChanged: (value) {
-                _filterMonths(value);
-              },
-              decoration: const InputDecoration(
-                labelText: 'Search',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: filteredMonthlyTotals.length,
-              itemBuilder: (context, index) {
-                MonthlyTotal monthlyTotal = filteredMonthlyTotals[index];
-                return Container(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: ListTile(
-                    title: Text(
-                      '${monthlyTotal.monthName}, ${monthlyTotal.year} - ${monthlyTotal.formattedTotal}',
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () {
-                        _removeMonth(monthlyTotal.monthKey);
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(
-                              'Month removed: ${monthlyTotal.monthName}, ${monthlyTotal.year}'),
-                        ));
-                      },
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _filterMonths(String query) {
-    filteredMonthlyTotals = monthlyTotals
-        .where((total) =>
-            total.monthKey.toLowerCase().contains(query.toLowerCase()) ||
-            total.monthName.toLowerCase().contains(query.toLowerCase()) ||
-            total.year.toString().contains(query))
-        .toList();
-    setState(() {});
-  }
-
-  void _removeMonth(String monthKey) {
-    setState(() {
-      monthlyTotals.removeWhere((total) => total.monthKey == monthKey);
-      filteredMonthlyTotals.removeWhere((total) => total.monthKey == monthKey);
-    });
-    _saveMonthlyTotals();
-  }
-
-  void _saveMonthlyTotals() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> jsonList =
-        monthlyTotals.map((total) => total.toJson()).toList();
-    prefs.setStringList('monthlyTotals', jsonList);
-  }
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
@@ -655,6 +498,291 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 }
 
+class MonthlyTotal {
+  final String monthKey;
+  int totalSeconds;
+  int showedVideosCounter;
+  int placementsCounter;
+  int bibleStudiesCounter;
+  int returnVisitsCounter;
+
+  MonthlyTotal({
+    required this.monthKey,
+    required this.totalSeconds,
+    required this.showedVideosCounter,
+    required this.placementsCounter,
+    required this.bibleStudiesCounter,
+    required this.returnVisitsCounter,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'monthKey': monthKey,
+      'totalSeconds': totalSeconds,
+      'showedVideosCounter': showedVideosCounter,
+      'placementsCounter': placementsCounter,
+      'bibleStudiesCounter': bibleStudiesCounter,
+      'returnVisitsCounter': returnVisitsCounter,
+    };
+  }
+
+  factory MonthlyTotal.fromJson(String jsonString) {
+    Map<String, dynamic> jsonData = jsonDecode(jsonString);
+
+    return MonthlyTotal(
+      monthKey: jsonData['monthKey'],
+      totalSeconds: jsonData['totalSeconds'] ?? 0,
+      showedVideosCounter: jsonData['showedVideosCounter'] ?? 0,
+      placementsCounter: jsonData['placementsCounter'] ?? 0,
+      bibleStudiesCounter: jsonData['bibleStudiesCounter'] ?? 0,
+      returnVisitsCounter: jsonData['returnVisitsCounter'] ?? 0,
+    );
+  }
+
+  String get formattedTotal => _formatTime(totalSeconds);
+
+  String get monthName {
+    List<String> months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+    List<String> parts = monthKey.split('_');
+    int monthIndex = int.parse(parts[1]) - 1;
+    return months[monthIndex];
+  }
+
+  int get year => int.parse(monthKey.split('_')[0]);
+
+  setTotalSeconds(int seconds) {
+    totalSeconds = seconds;
+  }
+
+  String _formatTime(int timeInSeconds) {
+    Duration duration = Duration(seconds: timeInSeconds);
+    String hours = duration.inHours.remainder(24).toString().padLeft(2, '0');
+    String minutes =
+        duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    String seconds =
+        duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$hours:$minutes:$seconds';
+  }
+}
+
+class MonthlyTotalsScreen extends StatefulWidget {
+  final List<MonthlyTotal> monthlyTotals;
+  final int showedVideosCounter;
+  final int placementsCounter;
+  final int bibleStudiesCounter;
+  final int returnVisitsCounter;
+  final bool isPioneerEnabled;
+
+  const MonthlyTotalsScreen({
+    super.key,
+    required this.monthlyTotals,
+    required this.showedVideosCounter,
+    required this.placementsCounter,
+    required this.bibleStudiesCounter,
+    required this.returnVisitsCounter,
+    required this.isPioneerEnabled,
+  });
+
+  @override
+  _MonthlyTotalsScreenState createState() => _MonthlyTotalsScreenState(
+      monthlyTotals: monthlyTotals,
+      showedVideosCounter: showedVideosCounter,
+      placementsCounter: placementsCounter,
+      bibleStudiesCounter: bibleStudiesCounter,
+      returnVisitsCounter: returnVisitsCounter,
+      isPioneerEnabled: isPioneerEnabled);
+}
+
+class _MonthlyTotalsScreenState extends State<MonthlyTotalsScreen> {
+  List<MonthlyTotal> monthlyTotals;
+  List<MonthlyTotal> filteredMonthlyTotals;
+  TextEditingController searchController = TextEditingController();
+  int showedVideosCounter;
+  int placementsCounter;
+  int bibleStudiesCounter;
+  int returnVisitsCounter;
+  bool isPioneerEnabled;
+
+  _MonthlyTotalsScreenState({
+    required this.monthlyTotals,
+    required this.showedVideosCounter,
+    required this.placementsCounter,
+    required this.bibleStudiesCounter,
+    required this.returnVisitsCounter,
+    required this.isPioneerEnabled,
+  }) : filteredMonthlyTotals = List.from(monthlyTotals);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Monthly Hours', style: TextStyle(fontSize: 20)),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: searchController,
+              onChanged: (value) {
+                _filterMonths(value);
+              },
+              decoration: const InputDecoration(
+                labelText: 'Search',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: filteredMonthlyTotals.length,
+              itemBuilder: (context, index) {
+                MonthlyTotal monthlyTotal = filteredMonthlyTotals[index];
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ListTile(
+                        title: Text(
+                          '${monthlyTotal.monthName}, ${monthlyTotal.year} - ${monthlyTotal.formattedTotal}',
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () {
+                            _removeMonth(monthlyTotal.monthKey);
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text(
+                                  'Month removed: ${monthlyTotal.monthName}, ${monthlyTotal.year}'),
+                            ));
+                          },
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            _showMonthlyActivityPopup(context, monthlyTotal);
+                          },
+                          child: const Text(
+                            'This Month Activity',
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMonthlyActivityPopup(
+      BuildContext context, MonthlyTotal selectedTotal) {
+    // Retrieve the selected monthly total or use a default value
+    MonthlyTotal currentMonthTotal = monthlyTotals.firstWhere(
+      (total) => total.monthKey == selectedTotal.monthKey,
+      orElse: () => MonthlyTotal(
+        monthKey: selectedTotal.monthKey,
+        placementsCounter: selectedTotal.placementsCounter,
+        showedVideosCounter: selectedTotal.showedVideosCounter,
+        bibleStudiesCounter: bibleStudiesCounter,
+        returnVisitsCounter: returnVisitsCounter,
+        totalSeconds: 0,
+      ),
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('This Month Activity'),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildActivityRow(
+                  'Video Showed', currentMonthTotal.showedVideosCounter),
+              _buildActivityRow(
+                  'Placements', currentMonthTotal.placementsCounter),
+              _buildActivityRow('Conducted Bible Studies',
+                  currentMonthTotal.bibleStudiesCounter),
+              _buildActivityRow(
+                  'Return Visits', currentMonthTotal.returnVisitsCounter),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildActivityRow(String activity, int value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(activity),
+        Text(value.toString()),
+      ],
+    );
+  }
+
+  void _filterMonths(String query) {
+    filteredMonthlyTotals = monthlyTotals
+        .where((total) =>
+            total.monthKey.toLowerCase().contains(query.toLowerCase()) ||
+            total.monthName.toLowerCase().contains(query.toLowerCase()) ||
+            total.year.toString().contains(query))
+        .toList();
+    setState(() {});
+  }
+
+  void _removeMonth(String monthKey) {
+    setState(() {
+      monthlyTotals.removeWhere((total) => total.monthKey == monthKey);
+      filteredMonthlyTotals.removeWhere((total) => total.monthKey == monthKey);
+    });
+    _saveMonthlyTotals();
+  }
+
+  void _saveMonthlyTotals() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> jsonList =
+        monthlyTotals.map((total) => jsonEncode(total.toJson())).toList();
+    prefs.setStringList('monthlyTotals', jsonList);
+  }
+}
+
 class _TimerScreenState extends State<TimerScreen> {
   late Timer _timer;
   int _serviceTime = 0;
@@ -729,6 +857,7 @@ class _TimerScreenState extends State<TimerScreen> {
                 setState(() {
                   isPioneerEnabled = value;
                 });
+                _savePioneerMode(); // Save Pioneer mode state when it changes
               },
               activeTrackColor: Colors.lightGreenAccent,
               activeColor: Colors.green,
@@ -745,10 +874,10 @@ class _TimerScreenState extends State<TimerScreen> {
             if (isPioneerEnabled)
               ElevatedButton(
                 onPressed: () {
-                  _showCountersDialog(context);
+                  _showCountersDialog(context, _monthlyTotals.last.monthKey);
                 },
                 child: const Text(
-                  'Show Activity Counters',
+                  'Show Activity',
                   style: TextStyle(fontSize: 18),
                 ),
               ),
@@ -758,12 +887,57 @@ class _TimerScreenState extends State<TimerScreen> {
     );
   }
 
+  void _showMonthlyTotalsScreen(BuildContext context) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (BuildContext context) => MonthlyTotalsScreen(
+        monthlyTotals: _monthlyTotals,
+        showedVideosCounter: showedVideosCounter,
+        placementsCounter: placementsCounter,
+        bibleStudiesCounter: bibleStudiesCounter,
+        returnVisitsCounter: returnVisitsCounter,
+        isPioneerEnabled: isPioneerEnabled,
+      ),
+    ));
+  }
+
   @override
   void initState() {
     super.initState();
     _loadServiceTime();
     _loadMonthlyTotals();
+    _loadPioneerMode();
+    _loadCounters();
     _checkMonthChange();
+  }
+
+  void _loadPioneerMode() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isPioneerEnabled = prefs.getBool('isPioneerEnabled') ?? false;
+    });
+  }
+
+  void _savePioneerMode() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setBool('isPioneerEnabled', isPioneerEnabled);
+  }
+
+  void _loadCounters() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      showedVideosCounter = prefs.getInt('showedVideosCounter') ?? 0;
+      placementsCounter = prefs.getInt('placementsCounter') ?? 0;
+      bibleStudiesCounter = prefs.getInt('bibleStudiesCounter') ?? 0;
+      returnVisitsCounter = prefs.getInt('returnVisitsCounter') ?? 0;
+    });
+  }
+
+  void _saveCounters() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setInt('showedVideosCounter', showedVideosCounter);
+    prefs.setInt('placementsCounter', placementsCounter);
+    prefs.setInt('bibleStudiesCounter', bibleStudiesCounter);
+    prefs.setInt('returnVisitsCounter', returnVisitsCounter);
   }
 
   Widget _buildCounterRow(
@@ -800,8 +974,26 @@ class _TimerScreenState extends State<TimerScreen> {
 
     MonthlyTotal existingEntry = _monthlyTotals.firstWhere(
       (total) => total.monthKey == newMonthKey,
-      orElse: () => MonthlyTotal(monthKey: newMonthKey, totalSeconds: 0),
+      orElse: () => MonthlyTotal(
+        monthKey: newMonthKey,
+        placementsCounter: placementsCounter,
+        showedVideosCounter: showedVideosCounter,
+        bibleStudiesCounter: bibleStudiesCounter,
+        returnVisitsCounter: returnVisitsCounter,
+        totalSeconds: 0,
+      ),
     );
+
+    // Reset counters and switch state when a new month begins
+    if (_monthlyTotals.isEmpty || _monthlyTotals.last.monthKey != newMonthKey) {
+      setState(() {
+        showedVideosCounter = 0;
+        placementsCounter = 0;
+        bibleStudiesCounter = 0;
+        returnVisitsCounter = 0;
+        isPioneerEnabled = false;
+      });
+    }
 
     _monthlyTotals.remove(existingEntry);
     setState(() {
@@ -809,25 +1001,6 @@ class _TimerScreenState extends State<TimerScreen> {
     });
 
     _saveMonthlyTotals();
-  }
-
-  void _decrementCounter(String counterType, StateSetter setState) {
-    setState(() {
-      switch (counterType) {
-        case 'showedVideos':
-          if (showedVideosCounter > 0) showedVideosCounter--;
-          break;
-        case 'placements':
-          if (placementsCounter > 0) placementsCounter--;
-          break;
-        case 'bibleStudies':
-          if (bibleStudiesCounter > 0) bibleStudiesCounter--;
-          break;
-        case 'returnVisits':
-          if (returnVisitsCounter > 0) returnVisitsCounter--;
-          break;
-      }
-    });
   }
 
   String _formatTime(int timeInSeconds) {
@@ -840,7 +1013,8 @@ class _TimerScreenState extends State<TimerScreen> {
     return '$hours:$minutes:$seconds';
   }
 
-  void _incrementCounter(String counterType, StateSetter setState) {
+  void _incrementCounter(
+      String counterType, String monthKey, StateSetter setState) {
     setState(() {
       switch (counterType) {
         case 'showedVideos':
@@ -856,7 +1030,89 @@ class _TimerScreenState extends State<TimerScreen> {
           returnVisitsCounter++;
           break;
       }
+
+      // Find the MonthlyTotal for the selected monthKey
+      MonthlyTotal currentMonthTotal = _monthlyTotals.firstWhere(
+        (total) => total.monthKey == monthKey,
+        orElse: () => MonthlyTotal(
+          monthKey: monthKey,
+          totalSeconds: 0,
+          showedVideosCounter: 0,
+          placementsCounter: 0,
+          bibleStudiesCounter: 0,
+          returnVisitsCounter: 0,
+        ),
+      );
+
+      // Update counters in currentMonthTotal
+      currentMonthTotal.showedVideosCounter = showedVideosCounter;
+      currentMonthTotal.placementsCounter = placementsCounter;
+      currentMonthTotal.bibleStudiesCounter = bibleStudiesCounter;
+      currentMonthTotal.returnVisitsCounter = returnVisitsCounter;
+
+      // Update or add the current month's MonthlyTotal in _monthlyTotals
+      int index =
+          _monthlyTotals.indexWhere((total) => total.monthKey == monthKey);
+      if (index != -1) {
+        _monthlyTotals[index] = currentMonthTotal;
+      } else {
+        _monthlyTotals.add(currentMonthTotal);
+      }
     });
+
+    _saveCounters(); // Save counters when they change
+    _saveMonthlyTotals(); // Save monthly totals after updating
+  }
+
+  void _decrementCounter(
+      String counterType, String monthKey, StateSetter setState) {
+    setState(() {
+      switch (counterType) {
+        case 'showedVideos':
+          if (showedVideosCounter > 0) showedVideosCounter--;
+          break;
+        case 'placements':
+          if (placementsCounter > 0) placementsCounter--;
+          break;
+        case 'bibleStudies':
+          if (bibleStudiesCounter > 0) bibleStudiesCounter--;
+          break;
+        case 'returnVisits':
+          if (returnVisitsCounter > 0) returnVisitsCounter--;
+          break;
+      }
+
+      // Find the MonthlyTotal for the selected monthKey
+      MonthlyTotal currentMonthTotal = _monthlyTotals.firstWhere(
+        (total) => total.monthKey == monthKey,
+        orElse: () => MonthlyTotal(
+          monthKey: monthKey,
+          totalSeconds: 0,
+          showedVideosCounter: 0,
+          placementsCounter: 0,
+          bibleStudiesCounter: 0,
+          returnVisitsCounter: 0,
+        ),
+      );
+
+      // Update counters in currentMonthTotal
+      currentMonthTotal.showedVideosCounter = showedVideosCounter;
+      currentMonthTotal.placementsCounter = placementsCounter;
+      currentMonthTotal.bibleStudiesCounter = bibleStudiesCounter;
+      currentMonthTotal.returnVisitsCounter = returnVisitsCounter;
+
+      // Update or add the current month's MonthlyTotal in _monthlyTotals
+      int index =
+          _monthlyTotals.indexWhere((total) => total.monthKey == monthKey);
+      if (index != -1) {
+        _monthlyTotals[index] = currentMonthTotal;
+      } else {
+        _monthlyTotals.add(currentMonthTotal);
+      }
+    });
+
+    _saveCounters(); // Save counters when they change
+    _saveMonthlyTotals(); // Save monthly totals after updating
   }
 
   void _loadServiceTime() async {
@@ -888,11 +1144,11 @@ class _TimerScreenState extends State<TimerScreen> {
   void _saveMonthlyTotals() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> jsonList =
-        _monthlyTotals.map((total) => total.toJson()).toList();
+        _monthlyTotals.map((total) => jsonEncode(total.toJson())).toList();
     prefs.setStringList('monthlyTotals', jsonList);
   }
 
-  void _showCountersDialog(BuildContext context) {
+  void _showCountersDialog(BuildContext context, String monthKey) {
     bool isPortrait =
         MediaQuery.of(context).orientation == Orientation.portrait;
 
@@ -912,26 +1168,32 @@ class _TimerScreenState extends State<TimerScreen> {
                     _buildCounterRow(
                       'Showed Videos ',
                       showedVideosCounter,
-                      () => _incrementCounter('showedVideos', setState),
-                      () => _decrementCounter('showedVideos', setState),
+                      () =>
+                          _incrementCounter('showedVideos', monthKey, setState),
+                      () =>
+                          _decrementCounter('showedVideos', monthKey, setState),
                     ),
                     _buildCounterRow(
                       'Placements',
                       placementsCounter,
-                      () => _incrementCounter('placements', setState),
-                      () => _decrementCounter('placements', setState),
+                      () => _incrementCounter('placements', monthKey, setState),
+                      () => _decrementCounter('placements', monthKey, setState),
                     ),
                     _buildCounterRow(
                       'Conducted Bible Studies',
                       bibleStudiesCounter,
-                      () => _incrementCounter('bibleStudies', setState),
-                      () => _decrementCounter('bibleStudies', setState),
+                      () =>
+                          _incrementCounter('bibleStudies', monthKey, setState),
+                      () =>
+                          _decrementCounter('bibleStudies', monthKey, setState),
                     ),
                     _buildCounterRow(
                       'Return Visits',
                       returnVisitsCounter,
-                      () => _incrementCounter('returnVisits', setState),
-                      () => _decrementCounter('returnVisits', setState),
+                      () =>
+                          _incrementCounter('returnVisits', monthKey, setState),
+                      () =>
+                          _decrementCounter('returnVisits', monthKey, setState),
                     ),
                   ],
                 ),
@@ -949,13 +1211,6 @@ class _TimerScreenState extends State<TimerScreen> {
         );
       },
     );
-  }
-
-  void _showMonthlyTotalsScreen(BuildContext context) {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (BuildContext context) =>
-          MonthlyTotalsScreen(monthlyTotals: _monthlyTotals),
-    ));
   }
 
   void _showTaskListScreen(BuildContext context) {
