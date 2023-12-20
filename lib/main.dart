@@ -871,10 +871,18 @@ class _TimerScreenState extends State<TimerScreen> {
               ),
             ),
             // Conditionally show the button based on the switch state
-            if (isPioneerEnabled)
+            if (isPioneerEnabled && _monthlyTotals.isNotEmpty)
               ElevatedButton(
                 onPressed: () {
-                  _showCountersDialog(context, _monthlyTotals.last.monthKey);
+                  if (_monthlyTotals.isNotEmpty) {
+                    _showCountersDialog(context, _monthlyTotals.last.monthKey);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Start the timer first'),
+                      ),
+                    );
+                  }
                 },
                 child: const Text(
                   'Show Activity',
@@ -976,10 +984,10 @@ class _TimerScreenState extends State<TimerScreen> {
       (total) => total.monthKey == newMonthKey,
       orElse: () => MonthlyTotal(
         monthKey: newMonthKey,
-        placementsCounter: placementsCounter,
-        showedVideosCounter: showedVideosCounter,
-        bibleStudiesCounter: bibleStudiesCounter,
-        returnVisitsCounter: returnVisitsCounter,
+        placementsCounter: 0,
+        showedVideosCounter: 0,
+        bibleStudiesCounter: 0,
+        returnVisitsCounter: 0,
         totalSeconds: 0,
       ),
     );
