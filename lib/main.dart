@@ -209,9 +209,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
                         icon: const Icon(Icons.delete),
                         onPressed: () {
                           _removeTask(task);
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('Task removed: ${task.type}'),
-                          ));
                         },
                       ),
                     ),
@@ -290,10 +287,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   _tasks.remove(task);
                   _filteredTasks.remove(task);
                 });
+                _saveTasks();
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Task removed: ${task.type}'),
-                ));
               },
               child: const Text('Delete'),
             ),
