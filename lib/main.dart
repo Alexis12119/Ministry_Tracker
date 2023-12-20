@@ -123,6 +123,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
           ),
           Expanded(
             child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
               itemCount: _filteredTasks.length,
               itemBuilder: (context, index) {
                 Task task = _filteredTasks[index];
@@ -134,7 +135,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     margin: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: ListTile(
                       title: Text(
@@ -175,14 +176,13 @@ class _TaskListScreenState extends State<TaskListScreen> {
                                 style: const TextStyle(fontSize: 14),
                               ),
                               const SizedBox(
-                                  width:
-                                      8), // Add spacing between location text and button
+                                width: 8,
+                              ), // Add spacing between location text and button
                               // "Copy Location" button
                               if (task.latitude != null &&
                                   task.longitude != null)
-                                IconButton(
-                                  icon: const Icon(Icons.copy),
-                                  onPressed: () {
+                                GestureDetector(
+                                  onTap: () {
                                     String locationString =
                                         '${task.latitude}, ${task.longitude}';
                                     FlutterClipboard.copy(locationString).then(
@@ -195,6 +195,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
                                       ),
                                     );
                                   },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(
+                                        16.0), // Increase padding for larger touch area
+                                    child: const Icon(Icons.copy),
+                                  ),
                                 ),
                             ],
                           ),
@@ -265,11 +270,37 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   void _removeTask(Task task) {
-    setState(() {
-      _tasks.remove(task);
-      _filteredTasks.remove(task); // Remove from filteredTasks as well
-    });
-    _saveTasks();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmation'),
+          content: const Text('Are you sure you want to delete this task?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Delete the task and close the dialog
+                setState(() {
+                  _tasks.remove(task);
+                  _filteredTasks.remove(task);
+                });
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text('Task removed: ${task.type}'),
+                ));
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _saveTasks() async {
@@ -649,14 +680,16 @@ class _MonthlyTotalsScreenState extends State<MonthlyTotalsScreen> {
           ),
           Expanded(
             child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
               itemCount: filteredMonthlyTotals.length,
               itemBuilder: (context, index) {
                 MonthlyTotal monthlyTotal = filteredMonthlyTotals[index];
                 return Container(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(36),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -670,10 +703,6 @@ class _MonthlyTotalsScreenState extends State<MonthlyTotalsScreen> {
                           icon: const Icon(Icons.delete),
                           onPressed: () {
                             _removeMonth(monthlyTotal.monthKey);
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(
-                                  'Month removed: ${monthlyTotal.monthName}, ${monthlyTotal.year}'),
-                            ));
                           },
                         ),
                       ),
@@ -768,11 +797,37 @@ class _MonthlyTotalsScreenState extends State<MonthlyTotalsScreen> {
   }
 
   void _removeMonth(String monthKey) {
-    setState(() {
-      monthlyTotals.removeWhere((total) => total.monthKey == monthKey);
-      filteredMonthlyTotals.removeWhere((total) => total.monthKey == monthKey);
-    });
-    _saveMonthlyTotals();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmation'),
+          content: const Text('Are you sure you want to delete this month?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Delete the month and close the dialog
+                setState(() {
+                  monthlyTotals
+                      .removeWhere((element) => element.monthKey == monthKey);
+                  filteredMonthlyTotals
+                      .removeWhere((element) => element.monthKey == monthKey);
+                });
+                _saveMonthlyTotals();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _saveMonthlyTotals() async {
@@ -999,7 +1054,6 @@ class _TimerScreenState extends State<TimerScreen> {
         placementsCounter = 0;
         bibleStudiesCounter = 0;
         returnVisitsCounter = 0;
-        isPioneerEnabled = false;
       });
     }
 
@@ -1167,43 +1221,48 @@ class _TimerScreenState extends State<TimerScreen> {
           builder: (BuildContext context, StateSetter setState) {
             return AlertDialog(
               title: const Text('Activity Counters'),
-              content: SizedBox(
-                width:
-                    isPortrait ? null : MediaQuery.of(context).size.width * 0.8,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildCounterRow(
-                      'Showed Videos ',
-                      showedVideosCounter,
-                      () =>
-                          _incrementCounter('showedVideos', monthKey, setState),
-                      () =>
-                          _decrementCounter('showedVideos', monthKey, setState),
-                    ),
-                    _buildCounterRow(
-                      'Placements',
-                      placementsCounter,
-                      () => _incrementCounter('placements', monthKey, setState),
-                      () => _decrementCounter('placements', monthKey, setState),
-                    ),
-                    _buildCounterRow(
-                      'Conducted Bible Studies',
-                      bibleStudiesCounter,
-                      () =>
-                          _incrementCounter('bibleStudies', monthKey, setState),
-                      () =>
-                          _decrementCounter('bibleStudies', monthKey, setState),
-                    ),
-                    _buildCounterRow(
-                      'Return Visits',
-                      returnVisitsCounter,
-                      () =>
-                          _incrementCounter('returnVisits', monthKey, setState),
-                      () =>
-                          _decrementCounter('returnVisits', monthKey, setState),
-                    ),
-                  ],
+              content: SingleChildScrollView(
+                child: SizedBox(
+                  width: isPortrait
+                      ? null
+                      : MediaQuery.of(context).size.width * 0.8,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildCounterRow(
+                        'Showed Videos ',
+                        showedVideosCounter,
+                        () => _incrementCounter(
+                            'showedVideos', monthKey, setState),
+                        () => _decrementCounter(
+                            'showedVideos', monthKey, setState),
+                      ),
+                      _buildCounterRow(
+                        'Placements',
+                        placementsCounter,
+                        () =>
+                            _incrementCounter('placements', monthKey, setState),
+                        () =>
+                            _decrementCounter('placements', monthKey, setState),
+                      ),
+                      _buildCounterRow(
+                        'Conducted Bible Studies',
+                        bibleStudiesCounter,
+                        () => _incrementCounter(
+                            'bibleStudies', monthKey, setState),
+                        () => _decrementCounter(
+                            'bibleStudies', monthKey, setState),
+                      ),
+                      _buildCounterRow(
+                        'Return Visits',
+                        returnVisitsCounter,
+                        () => _incrementCounter(
+                            'returnVisits', monthKey, setState),
+                        () => _decrementCounter(
+                            'returnVisits', monthKey, setState),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               actions: [
