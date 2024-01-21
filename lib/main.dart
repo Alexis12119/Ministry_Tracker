@@ -153,9 +153,34 @@ class _TaskListScreenState extends State<TaskListScreen> {
                             'Age: ${task.age}',
                             style: const TextStyle(fontSize: 14),
                           ),
-                          Text(
-                            'Phone Number: ${task.phoneNumber}',
-                            style: const TextStyle(fontSize: 14),
+                          Row(
+                            children: [
+                              Text(
+                                'Phone Number: ${task.phoneNumber}',
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                              const SizedBox(
+                                width: 8,
+                              ),
+                              // "Copy Phone Number" button
+                              GestureDetector(
+                                onTap: () {
+                                  FlutterClipboard.copy(task.phoneNumber).then(
+                                    (value) => ScaffoldMessenger.of(context)
+                                        .showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Phone number copied to clipboard'),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(0.0),
+                                  child: const Icon(Icons.copy),
+                                ),
+                              ),
+                            ],
                           ),
                           Text(
                             'Date: ${task.date}',
@@ -197,7 +222,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.all(
-                                        16.0), // Increase padding for larger touch area
+                                        0.0), // Increase padding for larger touch area
                                     child: const Icon(Icons.copy),
                                   ),
                                 ),
@@ -206,9 +231,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
                         ],
                       ),
                       trailing: IconButton(
-                        icon: const Icon(Icons.delete),
+                        icon: const Icon(Icons.check),
                         onPressed: () {
-                          _removeTask(task);
+                          _completeTask(task);
                         },
                       ),
                     ),
@@ -266,13 +291,13 @@ class _TaskListScreenState extends State<TaskListScreen> {
     });
   }
 
-  void _removeTask(Task task) {
+  void _completeTask(Task task) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Confirmation'),
-          content: const Text('Are you sure you want to delete this task?'),
+          content: const Text('Are you sure you want to remove this task?'),
           actions: [
             TextButton(
               onPressed: () {
@@ -674,7 +699,7 @@ class _MonthlyTotalsScreenState extends State<MonthlyTotalsScreen> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
+            child: ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               itemCount: filteredMonthlyTotals.length,
               itemBuilder: (context, index) {
@@ -716,6 +741,10 @@ class _MonthlyTotalsScreenState extends State<MonthlyTotalsScreen> {
                     ],
                   ),
                 );
+              },
+              separatorBuilder: (context, index) {
+                // Add space between tiles
+                return const SizedBox(height: 8.0);
               },
             ),
           ),
